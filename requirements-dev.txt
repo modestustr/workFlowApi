@@ -1,4 +1,4 @@
 pytest
 pytest-cov
-ruff
 pre-commit
+pre-commit-hooks
