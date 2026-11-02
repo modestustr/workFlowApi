@@ -45,3 +45,33 @@ def test_cli_reports_invalid_repository(tmp_path: Path, capsys) -> None:
 
     assert exit_code == 2
     assert "does not exist" in capsys.readouterr().err
+
+
+def test_long_line_report_explains_length_and_recommends_split(tmp_path: Path, capsys) -> None:
+    long_value = "x" * 190
+    (tmp_path / "module.py").write_text(f"value = '{long_value}'\n", encoding="utf-8")
+
+    exit_code = main([str(tmp_path)])
+
+    output = capsys.readouterr().out
+    assert exit_code == 1
+    assert "E501" in output
+    assert "karakter" in output
+    assert "Öneri:" in output
+    assert "çok satırlı" in output
+    assert "https://docs.astral.sh/ruff/rules/line-too-long" in output
+
+
+def test_json_long_line_finding_contains_explanation(tmp_path: Path, capsys) -> None:
+    long_value = "x" * 190
+    (tmp_path / "module.py").write_text(f"value = '{long_value}'\n", encoding="utf-8")
+
+    exit_code = main([str(tmp_path), "--format", "json"])
+
+    output = json.loads(capsys.readouterr().out)
+    finding = output["findings"][0]
+    assert exit_code == 1
+    assert finding["code"] == "E501"
+    assert "karakter sınırını" in finding["explanation"]
+    assert finding["suggestion"]
+    assert finding["rule_url"] == "https://docs.astral.sh/ruff/rules/line-too-long"

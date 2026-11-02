@@ -35,6 +35,10 @@ def _print_text(result: ScanResult) -> None:
     print(f"Findings: {len(result.findings)}")
     for finding in result.findings:
         print(f"{finding.file}:{finding.line}:{finding.column}: {finding.code} {finding.message}")
+        print(f"  Açıklama: {finding.explanation}")
+        print(f"  Öneri: {finding.suggestion}")
+        if finding.rule_url:
+            print(f"  Kural: {finding.rule_url}")
 
 
 def main(argv: list[str] | None = None) -> int:

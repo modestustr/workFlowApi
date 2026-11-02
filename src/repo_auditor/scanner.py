@@ -31,6 +31,9 @@ class Finding:
     file: str
     line: int
     column: int
+    explanation: str
+    suggestion: str
+    rule_url: str | None
 
 
 @dataclass(frozen=True)
@@ -142,12 +145,45 @@ def _parse_finding(item: object, root: Path) -> Finding:
         or not isinstance(location.get("column"), int)
     ):
         raise RuntimeError("Ruff returned a malformed finding.")
+    code = item["code"]
+    message = item["message"]
+    explanation, suggestion = _finding_guidance(code, message)
+    rule_url = item.get("url")
     return Finding(
-        code=item["code"],
-        message=item["message"],
+        code=code,
+        message=message,
         file=_relative_file(item["filename"], root),
         line=location["row"],
         column=location["column"],
+        explanation=explanation,
+        suggestion=suggestion,
+        rule_url=rule_url if isinstance(rule_url, str) else None,
+    )
+
+
+def _finding_guidance(code: str, message: str) -> tuple[str, str]:
+    if code == "E501":
+        details = message.removeprefix("Line too long (").removesuffix(")")
+        try:
+            length, limit = (int(value.strip()) for value in details.split(">", maxsplit=1))
+        except ValueError:
+            return (
+                "Satır, projede belirlenen maksimum satır uzunluğunu aşıyor.",
+                "Uzun ifadeyi okunabilir, parantezli çok satırlı bir yapıya bölün.",
+            )
+        return (
+            f"Satır {length} karakter; izin verilen {limit} karakter sınırını {length - limit} karakter aşıyor.",
+            "Uzun ifadeyi parantezli çok satırlı bir yapıya bölün. String ifadelerinde içeriği değiştirmeden "
+            "bölünebildiğini kontrol edin.",
+        )
+    if code == "F401":
+        return (
+            "İçe aktarılan modül veya isim dosyada kullanılmıyor.",
+            "İçe aktarım gereksizse kaldırın; yalnızca yan etkisi için kullanılıyorsa bu tercihi açıkça belgeleyin.",
+        )
+    return (
+        f"{code} kuralı: {message}",
+        "İlgili Ruff kuralı ve önerilen düzeltme için rapordaki kural bağlantısını açın.",
     )
 
 

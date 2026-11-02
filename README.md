@@ -33,6 +33,8 @@ Direct command:
 
 The default target version is `py310`. The supported values are `py310` through `py314`.
 
+Each finding includes the rule code, file and line location, a short explanation, a suggested next step, and a link to the rule documentation when Ruff provides one. For example, an `E501` finding reports the actual line length, configured limit, and number of excess characters. The scanner reports findings only; it does not automatically fix the target repository.
+
 Exit codes:
 
 - `0`: scan completed with no findings
